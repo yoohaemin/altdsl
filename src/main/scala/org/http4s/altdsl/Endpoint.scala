@@ -24,7 +24,7 @@ object X {
     )(
       implicit p: Prepend.Aux[Result, B, Prepended],
       E: Semigroup[EE]
-    ) = new EndpointBuilder[F, EE] { inner =>
+    ): EndpointBuilder.Aux[F, EE, Prepended] = new EndpointBuilder[F, EE] { inner =>
       override type Result = Prepended
 
       override def buildParam(req: Request[F]): F[Either[Option[EE], inner.Result]] =
@@ -106,14 +106,14 @@ object X {
         outer.extract(req).map(_.map(f))
     }
 
-    final def ++[B <: HList](
+    final def ++[B <: HList, Concat <: HList](
       that: Extractor.Aux[F, E, B]
     )(
-      implicit p: Prepend[Out, B],
+      implicit p: Prepend.Aux[Out, B, Concat],
       E: Semigroup[E]
-    ): Extractor.Aux[F, E, Prepend[Out, B]#Out] =
+    ): Extractor.Aux[F, E, Concat] =
       new Extractor[F, E] { inner =>
-        type Out = Prepend[outer.Out, that.Out]#Out
+        type Out = Concat
 
         override def extract(req: Request[F])(implicit F: Applicative[F]): F[Validated[E, Out]] =
           F.map2(outer.extract(req), that.extract(req))((thisRes, thatRes) => thisRes.map2(thatRes)(_ ++ _))
