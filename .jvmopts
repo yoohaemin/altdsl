@@ -1,0 +1,4 @@
+-Dfile.encoding=UTF8
+-Xms4G
+-Xmx4G
+-XX:+UseParallelGC
