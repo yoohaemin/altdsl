@@ -4,25 +4,26 @@ lazy val root = project
     name := "http4s-altdsl",
     version := "0.1.0",
     scalaVersion := D.V.scala213,
-    crossScalaVersions := Seq(D.V.scala213, D.V.scala212
-      , D.V.dotty
-    )
+    crossScalaVersions := Seq(D.V.scala213)
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-core" % "0.21.4",
-      "com.chuusai" %% "shapeless" % "2.4.0-M1"
-).map(_.withDottyCompat(scalaVersion.value))
+      "org.http4s"                 %% "http4s-core"   % "0.21.4",
+      "com.chuusai"                %% "shapeless"     % "2.4.0-M1",
+      "com.github.julien-truffaut" %% "monocle-core"  % "2.0.4",
+      "com.github.julien-truffaut" %% "monocle-macro" % "2.0.4",
+      "eu.timepit"                 %% "singleton-ops" % "0.5.0",
+      compilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full)
+    )
   )
   .settings(
-    scalacOptions ++= { if (isDotty.value) Seq("-language:Scala2Compat") else Nil },
-    scalacOptions ++= { if (scalaVersion.value == D.V.scala212) Seq("-Ypartial-unification") else Nil}
+    scalacOptions ++= Seq(
+    )
   )
 
 lazy val D = new {
   lazy val V = new {
     val scala213 = "2.13.1"
     val scala212 = "2.12.11"
-    val dotty    = "0.24.0-RC1"
   }
 }
