@@ -8,11 +8,10 @@ lazy val root = project
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.http4s"                 %% "http4s-core"   % "0.21.4",
-      "com.chuusai"                %% "shapeless"     % "2.4.0-M1",
-      "com.github.julien-truffaut" %% "monocle-core"  % "2.0.4",
-      "com.github.julien-truffaut" %% "monocle-macro" % "2.0.4",
-      "eu.timepit"                 %% "singleton-ops" % "0.5.0",
+      "org.http4s"  %% "http4s-core"      % "0.21.4",
+      "com.chuusai" %% "shapeless"        % "2.4.0-M1",
+      "eu.timepit"  %% "singleton-ops"    % "0.5.0",
+      "ru.tinkoff"  %% "tofu-optics-core" % "0.7.7",
       compilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full)
     )
   )
