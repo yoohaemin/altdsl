@@ -1,10 +1,5 @@
-## sbt project cross-compiled with Dotty and Scala 2
+an alternative http4s dsl
 
-### Usage
-
-This is a normal sbt project, you can compile code with `sbt compile` and run it
-with `sbt run`, `sbt console` will start a Dotty REPL. For more information on
-cross-compilation in sbt, see <https://www.scala-sbt.org/1.x/docs/Cross-Build.html>.
-
-For more information on the sbt-dotty plugin, see the
-[dotty-example-project](https://github.com/lampepfl/dotty-example-project/blob/master/README.md).
+I want to explore two things:
+- Use rich data structures to build routes. Current http4s dsl uses `PartialFunction` as a building block. `PartialFunction`s are opaque and don't have enough structure for programmers to inspect. In other words, once they are created, not a lot of operations can be done on them, except for linear chaining.
+- See if the dsl can benefit from some type level programming.
