@@ -1,30 +1,45 @@
 package altdsl
 
+import altdsl.ExtractorComponent.HeaderExtractor
+import altdsl.RequestExtractor.Base
 import cats.implicits._
-import org.http4s.{ EntityEncoder, Method, Response, Status }
-import shapeless.{ ::, HNil }
+import org.http4s.util.CaseInsensitiveString
+import org.http4s.{ EntityEncoder, Header, Headers, Request, Response, Status }
+import shapeless.{ ::, HNil, Id }
+import zio.test.Assertion._
+import zio.test._
 
-class EndpointBuilderTest {
+object EndpointBuilderTest extends DefaultRunnableSpec {
 
-  import cats.effect._
+  override def spec = suite("EndpointBuilderTest")(
+    test("Header extraction") {
+      val headerName  = "asdf"
+      val headerValue = "123123"
+      val header      = Header(headerName, headerValue)
 
-  case class X(m: Method, n: Method)
+      val headerNameExtractor  = HeaderExtractor(CaseInsensitiveString(headerName), _.name, () => 1) :: Base[Id]
+      val headerValueExtractor = HeaderExtractor(CaseInsensitiveString(headerName), _.value, () => 1) :: Base[Id]
 
-  val testExtractor = new Extractor.MethodMapping[IO, String](Method.GET, "tis not get!")
+      val endpoint = EndpointBuilder
+        .empty[Id]
+        .withExtractor(headerNameExtractor)
+        .withExtractor(headerValueExtractor)
+        .consume[2, Header.Raw]()
+        .mapError(s => Response(Status.NotFound, body = EntityEncoder[Id, String].toEntity(s.toString).body))
+        .map {
+          case (header: Header.Raw) :: HNil =>
+            header :: HNil
+        }
+        .build {
+          case header :: HNil =>
+            Response(Status.Ok, body = EntityEncoder[Id, String].toEntity(header.value).body)
+        }
+        .handle(identity)
 
-  val endpoint = EndpointBuilder
-    .empty[IO]
-    .withExtractor(testExtractor)
-    .withExtractor(testExtractor)
-    .consume[2, X]()
-    .mapError(s => IO.pure(Response(Status.NotFound, body = EntityEncoder[IO, String].toEntity(s).body)))
-    .map {
-      case X(m, n) :: HNil =>
-        m :: HNil
+      val result = endpoint.run(Request[Id](headers = Headers(header :: Nil))).value.get.bodyAsText.compile.foldMonoid
+
+      assert(result)(equalTo(headerValue))
     }
-    .build {
-      case method :: HNil =>
-        Response(Status.Ok, body = EntityEncoder[IO, String].toEntity("Got a " + method.toString).body)
-    }
-    .handle(IO.pure)
+  )
+
 }

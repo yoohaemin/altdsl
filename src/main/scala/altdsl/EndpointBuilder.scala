@@ -6,6 +6,7 @@ import cats.data.Validated.{ Invalid, Valid }
 import org.http4s.{ Request, Response }
 import shapeless.{ ::, Generic, HList, HNil, Nat }
 import shapeless.ops.hlist.{ Drop, Prepend, Take }
+import shapeless.ops.sized.ToHList
 import singleton.ops.{ OpAuxNat, ToNat, XInt }
 
 abstract class EndpointBuilder[F[_]: Applicative, E] { outer =>
@@ -15,15 +16,17 @@ abstract class EndpointBuilder[F[_]: Applicative, E] { outer =>
   def buildParam(req: Request[F]): F[Either[Option[E], Result]]
 
   final def withExtractor[B <: HList, Prepended <: HList, EE >: E](
-    extractor: Extractor.Aux[F, EE, B]
+    extractor: RequestExtractor[F, EE]
   )(
-    implicit p: Prepend.Aux[Result, B, Prepended],
-    E: Semigroup[EE]
+    implicit
+    p: Prepend.Aux[Result, extractor.Result, Prepended],
+    E: Semigroup[EE],
+    toHList: ToHList[List[extractor.EC[_]], extractor.L],
   ): EndpointBuilder.Aux[F, EE, Prepended] = new EndpointBuilder[F, EE] { inner =>
     override type Result = Prepended
 
     override def buildParam(req: Request[F]): F[Either[Option[EE], inner.Result]] =
-      Applicative[F].map2(outer.buildParam(req), extractor.extract(req)) {
+      Applicative[F].map2(outer.buildParam(req), extractor.run(req)) {
         case (Right(thisRes), Valid(thatRes)) => Right(thisRes ++ thatRes)
         case (Left(None), _)                  => Left(None)
         case (Left(Some(err)), Invalid(moar)) => Left(Some(Semigroup[EE].combine(err, moar)))
