@@ -102,9 +102,9 @@ object RequestExtractor {
     type Extractors = Ext
   }
 
-  private[this] implicit val whatever: Semigroup[Nothing] = (a, b) => if (scala.util.Random.nextBoolean()) a else b
-  private[this] val x: Applicative[Validated[Nothing, *]] =
-    cats.data.Validated.catsDataApplicativeErrorForValidated[Nothing](whatever)
+  private[this] implicit val whatever: Semigroup[Nothing] = (_, b) => b
+  private[this] val validatedNothingApplicative: Applicative[Validated[Nothing, *]] =
+    Validated.catsDataApplicativeErrorForValidated[Nothing](whatever)
 
   def Base[F[_]](implicit F: Applicative[F]): RequestExtractor.Aux[F, Nothing, HNil, Nat._0, HNil, HNil] =
     new RequestExtractor[F, Nothing] {
@@ -121,6 +121,8 @@ object RequestExtractor {
         Sized.wrap[List[ExtractorComponent[F, Nothing, _]], Nat._0](Nil)
 
       override protected def sequencer: Sequencer.Aux[HNil, V, HNil] =
-        Sequencer.mkHNilSequencer[λ[X => F[Validated[Nothing, X]]]](F.compose[Validated[Nothing, *]](x))
+        Sequencer.mkHNilSequencer[λ[X => F[Validated[Nothing, X]]]](
+          F.compose[Validated[Nothing, *]](validatedNothingApplicative)
+        )
     }
 }

@@ -1,22 +1,35 @@
 package altdsl
 
-import org.http4s.{ EntityDecoder, Header }
 import org.http4s.util.CaseInsensitiveString
+import org.http4s.{EntityDecoder, Header}
+import shapeless.HList
 
 sealed abstract class ExtractorComponent[+F[_], +E, Out] {
   def ifEmpty: () => E
+  type Path <: HList
 }
 
 object ExtractorComponent {
   type Pure[A] <: Nothing
 
-  private[altdsl] case class HeaderExtractor[E, A](
-    headerName: CaseInsensitiveString,
-    mapfn: Header => A,
-    ifEmpty: () => E)
-    extends ExtractorComponent[Pure, E, A]
+  case class HeaderExtractor[E, A](headerName: CaseInsensitiveString, ifEmpty: () => E) extends ExtractorComponent[Pure, E, Header]
 
-  private[altdsl] case class BodyExtractor[F[_], E, A, B](body: EntityDecoder[F, A], mapfn: A => B, ifEmpty: () => E)
-    extends ExtractorComponent[F, E, B]
+  case class BodyExtractor[F[_], E, A](body: EntityDecoder[F, A], ifEmpty: () => E) extends ExtractorComponent[F, E, A]
+
+  case class PathExtractor[E, A](ifEmpty: () => E) extends ExtractorComponent[Pure, E, A]
+
+  case class QueryExtractor[E, A](ifEmpty: () => E) extends ExtractorComponent[Pure, E, A]
+
+  case class MethodExtractor[E, A](ifEmpty: () => E) extends ExtractorComponent[Pure, E, A]
+
+  case class HttpVersionExtractor[E, A](ifEmpty: () => E) extends ExtractorComponent[Pure, E, A]
+
+  case class Mapped[F[_], E, A, B](underlying: ExtractorComponent[F, E, A], fn: A => B) extends ExtractorComponent[F, E, B] {
+    override def ifEmpty: () => E = underlying.ifEmpty
+  }
+
+  val x: org.http4s.Request[cats.Id] = ???
+
+  x.uri.query.params
 
 }
